@@ -37,6 +37,19 @@ class ProgressBot:
             msg = await comms_instance.do_send_message(channel, message)
             return msg  # returns the message object of the message that was sent to discord
 
+    @staticmethod
+    async def _process_death_message(message: Message):
+        """recieved a notification from the minecraft interface bot that someone died on the server"""
+        message_ = butt_library.strip_discord_shitty_formatting(message.content)
+        log.debug("PROCESS_DEATH_MESSAGE - message received, %s" % message_)
+        if (message.author.id == 249966240787988480 and message_[:4] == 'RIP:') or \
+                (message.author.id == 992866467903176765 and message_[:4] == 'RIP:') or \
+                (str(message.author) == '💩💩#4048' and message_[:4] == 'RIP:'):
+            log.debug("PROCESS_DEATH_MESSAGE - passed author check")
+            vacuum[message.guild.id].add_death_message(message_)
+        else:
+            log.debug("PROCESS_DEATH_MESSAGE - FAILED author check, author id is %s" % str(message.author.id))
+
     async def chat_dispatch(self, message: Message):
         log.debug("CHAT_DISPATCH  - GUID %d -  %s " % (
             message.guild.id, message.content))
@@ -51,11 +64,16 @@ class ProgressBot:
         except IndexError:
             pass
 
-        if ("has made the advancement [" in message.content or
-            "has reached the goal [" in message.content or
-            "has completed the challenge [" in message.content) \
+        if "RIP:" in message.content:
+            log.info("CHAT_DISPATCH - GUID %d - message is death alert from game server: %s " % (
+                message.guild.id, message.content))
+            await self._process_death_message(message)
+
+        elif ("has made the advancement [" in message.content or
+              "has reached the goal [" in message.content or
+              "has completed the challenge [" in message.content) \
                 and message.author.id == 249966240787988480:
-                # progress cheevo
+            # progress cheevo
             cheevo = db["minecraft"].do_insert(
                 "insert into progress.progres_cheevos (`player`, `cheevo_text`, `datetime`, `play_time` ) values (%s, %s, %s, 1)",
                 (message.content.split(" ")[0], message.content.split("[")[1][1:-2], datetime.datetime.utcnow())
