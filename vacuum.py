@@ -36,6 +36,8 @@ class Vacuum:
 
     def playtime_scraper(self):
         log.debug("scraper started at %s" % str(time.time()))
+        server_state = 0  # server states: 0= off, 1= on, 2= restarting
+        response_counter = 0
         try:
             with urllib.request.urlopen(self.updateurl, None, 5) as url:
                 data = json.loads(url.read().decode())
@@ -76,23 +78,51 @@ class Vacuum:
                         log.debug("scraper: no players on server.")
                 self.playtime_player_checkplayers(players)
 
+                if response_counter > 0:
+                    response_counter = 0  # reset counter
+                    log.warning("server back up")
+                    #await do_send_message(bot.get_channel(154337182717444096), "The server is back up, nerds")
+                server_state = 1
+
         except urllib.error.URLError:
             # minecraft server is offline and buttbot is still online
             self.playtime_player_saveall()
             log.warning("scraper lost connection with minecraft server")
+            server_state, response_counter = self.do_exception(server_state, response_counter)
 
         except http.client.RemoteDisconnected:
             # we are going to save all data here too
             self.playtime_player_saveall()
             log.warning("scraper lost connection with minecraft server")
+            server_state, response_counter = self.do_exception(server_state, response_counter)
 
         except socket.timeout:
             # we hit the timeout treshold - the minecraft server is probably locked up.
+            log.warning("scraper lost connection with minecraft server")
+            server_state, response_counter = self.do_exception(server_state, response_counter)
             pass
 
         finally:
             pass
 
+    async def do_exception(self, server_state, response_counter):
+        if response_counter == 0:
+            #reboot_monitor_file = Path("/home/taffer/minecraft/progress/reboot.txt")
+            if 1 == 2:
+                # this is likely a scheduled reboot, we will mute the channel message but continue
+                # as normal to catch reboot issues
+                # lets delete the file to acknowledge the reboot
+                log.debug("reboot detected")
+                os.remove("/home/taffer/minecraft/progress/reboot.txt")
+            else:
+                # probably not a scheduled reboot
+                log.warning("think the server crashed")
+                #await do_send_message(bot.get_channel(154337182717444096), "I think the server took a shit")
+        response_counter += 1
+        log.warning("server offline, counter is %d" % response_counter)
+        if not server_state == 2:
+            server_state = await response_monitor(response_counter)
+        return server_state, response_counter
     def playtime_player_checkplayers(self, players):
         try:
             for e in self.players:
