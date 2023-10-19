@@ -8,7 +8,7 @@ from shared import bot
 from discord.channel import DMChannel
 import logging
 
-from config import *
+import config
 
 LOGDIR = Path('logs')
 
@@ -34,7 +34,6 @@ def setup_logger() -> logging.Logger:
 
 log = setup_logger()
 progressbot = ProgressBot()
-bot.aiohttp_session = aiohttp.ClientSession()
 
 
 @bot.event
@@ -58,7 +57,7 @@ async def on_message(message):
             return
         if message.channel.id == 154337182717444096:
             try:
-                if message.content[0] == command_prefix:
+                if message.content[0] == config.command_prefix:
                     if message.author.id != 249966240787988480 and message.author.id != 992866467903176765:
                         log.debug(
                             "MAIN - ON_MESSAGE - sending message to command processor - author %s" % str(
@@ -79,12 +78,25 @@ async def serialize_weights():
     await bot.wait_until_ready()
     await asyncio.sleep(5)
     while not bot.is_closed():
-        if test_environment:
+        if config.test_environment:
             await asyncio.sleep(10)
         else:
             await asyncio.sleep(300)
 
 
-bot.add_cog(VacuumCog(bot))
-bot.loop.create_task(serialize_weights())
-bot.run(secretkey)
+async def main():
+    # do other async things
+    # start the client
+    async with bot:
+        log.debug("MAIN - starting")
+        bot.loop.create_task(serialize_weights())
+        log.debug("MAIN - serialize weights task created")
+        await progressbot.start_subscription()
+        log.debug("MAIN - progressbot scraper started")
+        await bot.add_cog(VacuumCog(bot))
+        bot.aiohttp_session = aiohttp.ClientSession()
+        await bot.start(config.secretkey)
+        log.debug("MAIN - starting bot")
+
+
+asyncio.run(main())

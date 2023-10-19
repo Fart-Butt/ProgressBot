@@ -17,18 +17,19 @@ class ProgressBot:
     def __init__(self):
         self.discordBot = bot
         self.mojang = mj.Mojang()
-        self.discordBot.loop.create_task(self.minecraft_scraper_subscription_task())
+
+    async def start_subscription(self):
+        log.debug("Progress Bot - starting subscription")
+        await self.discordBot.loop.create_task(self.minecraft_scraper_subscription_task())
 
     async def minecraft_scraper_subscription_task(self):
-        await self.discordBot.wait_until_ready()
         log.debug("MINECRAFT SCRAPER - starting scraper task")
-        while not self.discordBot.is_closed():
-            await asyncio.sleep(10)
-            log.debug("MINECRAFT SCRAPER - started")
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                for i in vacuum:
-                    executor.map(vacuum[i].playtime_scraper())
-            log.debug("MINECRAFT SCRAPER - ended")
+        await asyncio.sleep(10)
+        log.debug("MINECRAFT SCRAPER - started")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            for i in vacuum:
+                executor.map(vacuum[i].playtime_scraper())
+        log.debug("MINECRAFT SCRAPER - ended")
 
     @staticmethod
     async def docomms(message, channel, guild_id, bypass_for_test=False):

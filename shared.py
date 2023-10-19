@@ -6,8 +6,13 @@ import vacuum
 from discord.ext.commands import Bot
 import aiohttp
 import asyncio
+import discord
 
-bot = Bot(description="a bot for Progress", command_prefix=command_prefix, pm_help=False)
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
+
+bot = Bot(description="a bot for Progress", command_prefix=command_prefix, pm_help=False, intents=intents)
 
 log = logging.getLogger('bot.' + __name__)
 
