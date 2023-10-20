@@ -7,6 +7,7 @@ from progress import ProgressBot
 from shared import bot
 from discord.channel import DMChannel
 import logging
+from discord.ext import tasks
 
 import config
 
@@ -74,14 +75,14 @@ async def on_message(message):
                 await progressbot.chat_dispatch(message)
 
 
-async def serialize_weights():
-    await bot.wait_until_ready()
-    await asyncio.sleep(5)
-    while not bot.is_closed():
-        if config.test_environment:
-            await asyncio.sleep(10)
-        else:
-            await asyncio.sleep(300)
+if config.test_environment:
+    loop_timer = 10
+else:
+    loop_timer = 300
+
+
+# @tasks.loop(seconds=10)
+# async def serialize_weights():
 
 
 async def main():
@@ -89,9 +90,9 @@ async def main():
     # start the client
     async with bot:
         log.debug("MAIN - starting")
-        bot.loop.create_task(serialize_weights())
+        # bot.loop.create_task(serialize_weights())
         log.debug("MAIN - serialize weights task created")
-        await progressbot.start_subscription()
+        await progressbot.minecraft_scraper_task.start()
         log.debug("MAIN - progressbot scraper started")
         await bot.add_cog(VacuumCog(bot))
         bot.aiohttp_session = aiohttp.ClientSession()
