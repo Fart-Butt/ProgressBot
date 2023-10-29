@@ -89,6 +89,7 @@ async def main():
     # do other async things
     # start the client
     async with bot:
+        await bot.start(config.secretkey)
         log.debug("MAIN - starting")
         # bot.loop.create_task(serialize_weights())
         log.debug("MAIN - serialize weights task created")
@@ -96,7 +97,7 @@ async def main():
         log.debug("MAIN - progressbot scraper started")
         await bot.add_cog(VacuumCog(bot))
         bot.aiohttp_session = aiohttp.ClientSession()
-        await bot.start(config.secretkey)
+
         log.debug("MAIN - starting bot")
 
 
