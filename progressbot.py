@@ -3,8 +3,9 @@ from pathlib import Path
 import datetime
 import aiohttp
 from cogs.vacuum import VacuumCog
+from cogs.scraper_handler import ScraperHandler
 from progress import ProgressBot
-from shared import bot
+from shared import bot, vacuum_instance
 from discord.channel import DMChannel
 import logging
 from discord.ext import tasks
@@ -75,30 +76,17 @@ async def on_message(message):
                 await progressbot.chat_dispatch(message)
 
 
-if config.test_environment:
-    loop_timer = 10
-else:
-    loop_timer = 300
-
-
-# @tasks.loop(seconds=10)
-# async def serialize_weights():
-
-
 async def main():
     # do other async things
     # start the client
     async with bot:
-        await bot.start(config.secretkey)
         log.debug("MAIN - starting")
-        # bot.loop.create_task(serialize_weights())
-        log.debug("MAIN - serialize weights task created")
-        await progressbot.minecraft_scraper_task.start()
+        await bot.add_cog(ScraperHandler(bot))
         log.debug("MAIN - progressbot scraper started")
         await bot.add_cog(VacuumCog(bot))
         bot.aiohttp_session = aiohttp.ClientSession()
-
         log.debug("MAIN - starting bot")
+        await bot.start(config.secretkey)
 
 
 asyncio.run(main())

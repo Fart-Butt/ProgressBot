@@ -3,11 +3,9 @@ import logging
 import datetime
 import butt_library
 from config import command_prefix
-import concurrent.futures
 import mojang as mj
 from butt_library import allowed_in_channel_direct
 from discord import Message
-from discord.ext import tasks
 
 from shared import comms_instance, vacuum_instance as vacuum, db, bot
 
@@ -18,14 +16,6 @@ class ProgressBot:
     def __init__(self):
         self.discordBot = bot
         self.mojang = mj.Mojang()
-
-    @tasks.loop(seconds=10)
-    async def minecraft_scraper_task(self):
-        log.debug("MINECRAFT SCRAPER - starting scraper task")
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            for i in vacuum:
-                executor.map(vacuum[i].playtime_scraper())
-        log.debug("MINECRAFT SCRAPER - ended")
 
     @staticmethod
     async def docomms(message, channel, guild_id, bypass_for_test=False):
