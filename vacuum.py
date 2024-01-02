@@ -81,25 +81,25 @@ class Vacuum:
                 if response_counter > 0:
                     response_counter = 0  # reset counter
                     log.warning("server back up")
-                    #await do_send_message(bot.get_channel(154337182717444096), "The server is back up, nerds")
+                    # await do_send_message(bot.get_channel(154337182717444096), "The server is back up, nerds")
                 server_state = 1
 
         except urllib.error.URLError:
             # minecraft server is offline and buttbot is still online
             self.playtime_player_saveall()
             log.warning("scraper lost connection with minecraft server")
-            server_state, response_counter = self.do_exception(server_state, response_counter)
+            # server_state, response_counter =  self.do_exception(server_state, response_counter)
 
         except http.client.RemoteDisconnected:
             # we are going to save all data here too
             self.playtime_player_saveall()
             log.warning("scraper lost connection with minecraft server")
-            server_state, response_counter = self.do_exception(server_state, response_counter)
+            # server_state, response_counter = self.do_exception(server_state, response_counter)
 
         except socket.timeout:
             # we hit the timeout treshold - the minecraft server is probably locked up.
             log.warning("scraper lost connection with minecraft server")
-            server_state, response_counter = self.do_exception(server_state, response_counter)
+            # server_state, response_counter = self.do_exception(server_state, response_counter)
             pass
 
         finally:
@@ -107,7 +107,7 @@ class Vacuum:
 
     async def do_exception(self, server_state, response_counter):
         if response_counter == 0:
-            #reboot_monitor_file = Path("/home/taffer/minecraft/progress/reboot.txt")
+            # reboot_monitor_file = Path("/home/taffer/minecraft/progress/reboot.txt")
             if 1 == 2:
                 # this is likely a scheduled reboot, we will mute the channel message but continue
                 # as normal to catch reboot issues
@@ -117,12 +117,13 @@ class Vacuum:
             else:
                 # probably not a scheduled reboot
                 log.warning("think the server crashed")
-                #await do_send_message(bot.get_channel(154337182717444096), "I think the server took a shit")
+                # await do_send_message(bot.get_channel(154337182717444096), "I think the server took a shit")
         response_counter += 1
         log.warning("server offline, counter is %d" % response_counter)
         if not server_state == 2:
             server_state = await response_monitor(response_counter)
         return server_state, response_counter
+
     def playtime_player_checkplayers(self, players):
         try:
             for e in self.players:
