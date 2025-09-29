@@ -65,14 +65,14 @@ class ProgressBot:
                 "insert into progress.progres_cheevos (`player`, `cheevo_text`, `datetime`, `play_time` ) values (%s, %s, %s, 1)",
                 (message.content.split(" ")[0], message.content.split("[")[1][1:-2], datetime.datetime.utcnow())
             )
-        elif ("left the game" in message.content or "joined the game" in message.content):
+        elif ("left the server" in message.content or "joined the server" in message.content):
             message_ = butt_library.strip_discord_shitty_formatting(message.content)
-            player = message_.split(" ")[0]
+            player = message_.split(" ")[0].replace("*",'')
             logging.info("_process_all_other_messages: join/part message from minecraft - %s" % player)
             await self.record_player_guid(player)
             # this is a join or part message and we are going to ignore it
             # welcome to progress
-            if message.author.id == 249966240787988480 and "joined the game" in message_:
+            if message.author.id == 249966240787988480 and "joined the server" in message_:
                 log.debug("_process_all_other_messages: starting hwsp for %s" % player)
                 hwsp = vacuum[message.guild.id].have_we_seen_player(player)
                 log.debug(hwsp)

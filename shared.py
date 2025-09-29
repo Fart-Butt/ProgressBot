@@ -31,8 +31,8 @@ tables = {
 
 comms_instance = discord_comms.DiscordComms()
 vacuum_instance = vacuum.VacuumManager()
-vacuum_instance.subscribe(154337182717444096, "http://136.32.75.102:8123/up/world/DIM-1/","progress")
-vacuum_url = "http://136.32.75.102:8123/up/world/DIM-1/"
+vacuum_instance.subscribe(154337182717444096, "http://192.168.1.222:8123/up/world/DIM-1/","progress")
+#vacuum_url = "http://192.168.1.222:8123/up/world/DIM-1/"
 
 async def create_http_session():
     session = aiohttp.ClientSession()

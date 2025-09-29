@@ -7,6 +7,8 @@ import random
 import logging
 import time
 import socket
+from mcrcon import MCRcon
+from config import server
 
 from collections import UserDict
 from dateutil.parser import parse
@@ -17,13 +19,13 @@ log = logging.getLogger('bot.' + __name__)
 
 class Vacuum:
     def __init__(self, update_url, table_prefix):
-        log.debug("__init__ :: initializing Vaccum instance")
+        log.debug("__init__ :: initializing Vacuum instance")
         self.players = []
         self.updateurl = update_url
         self.config = ""
         self.table_prefix = table_prefix
         log.debug("__init__ :: table prefix set to %s" % table_prefix)
-        self.NSA_module = True
+        self.NSA_module = False
         log.debug("__init__ :: NSA_module enable set to %s" % self.NSA_module)
         self.playtime_load()
 
@@ -33,6 +35,41 @@ class Vacuum:
         except TypeError:
             # variable is empty instead of being an empty list
             self.players = []
+
+    def playtime_scraper_rcon(self):
+        log.debug("playtime_scraper_rcon running")
+        #try:
+        with MCRcon(server['ip'], server['password'], ) as m:
+            resp = m.command("/list")
+            try:
+                resp=resp.rstrip()
+                print("resp '%s'" % resp)
+                players_ = resp.split(": ")[1].split(", ")
+                print("player list: %s" % players_)
+                log.debug("player list: %s" % players_)
+                for p in players_:
+                    print("players: %s" % p)
+                    if self.playtime_player_active(p):
+                        pass
+                        # player was logged in, and is still logged in
+                        # we do not need to do anything for this player at this time.
+                    else:
+                        log.debug(" adding player %s since they have logged in" % p)
+                        # player was not logged in, but is logged in now.
+                        self.playtime_player_addplayer(p)
+            except IndexError:
+                #no one probably
+                players_ = []
+                pass
+            except ConnectionRefusedError:
+                log.error("RCON Connection refused")
+                pass
+            finally:
+                self.playtime_player_checkplayers(players_)
+        #except:
+            #pass
+        print("current players: %s" % self.players)
+
 
     def playtime_scraper(self):
         log.debug("scraper started at %s" % str(time.time()))
@@ -228,20 +265,17 @@ class Vacuum:
 
         try:
             shared.db["minecraft"].do_insert(
-                "INSERT INTO `{}_deaths` (`player_guid`, `player`,`message`,`world`,`x`,`y`,`z`,`datetime`)"
-                "select player_guid, %s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
-                "%s as datetime "
-                "from minecraft_players where player_name = %s".format(self.table_prefix),
-                (
-                    player, dmsg, coords['world'], coords['x'], coords['y'], coords['z'], datetime.datetime.utcnow(),
-                    player))
+                "INSERT INTO `{}_deaths` (`player`,`message`,`world`,`x`,`y`,`z`,`datetime`)"
+                "%s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
+                "%s as datetime ".format(self.table_prefix),
+                (player, dmsg, "None", 0, 0, 0, datetime.datetime.utcnow(),))
         except TypeError:
             # catch this error, something that i dont believe should be possible with how this is set up but?????
             shared.db["minecraft"].do_insert(
                 "INSERT INTO `{}_deaths` (`player_guid`, `player`,`message`,`world`,`x`,`y`,`z`,`datetime`)"
                 "select player_guid, %s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
                 "%s as datetime "
-                "from minecraft_players where player_name = %s".format(self.table_prefix),
+                "from minecraft_pleayers where player_name = %s".format(self.table_prefix),
                 (player, dmsg, "Exception Handling", 0, 0, 0, datetime.datetime.utcnow()), player)
         shared.db["minecraft"].close()
 

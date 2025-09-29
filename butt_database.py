@@ -11,11 +11,11 @@ class Db:
         self._db = _db
         self.user = username
         self.passw = password
-        self.connection = MySQLdb.connect(host='127.0.0.1', user=self.user, passwd=self.passw, db=self._db,
+        self.connection = MySQLdb.connect(host='192.168.1.222', user=self.user, passwd=self.passw, db=self._db,
                                           cursorclass=DictCursor)
 
     def connect(self):
-        self.connection = MySQLdb.connect(host='127.0.0.1', user=self.user, passwd=self.passw, db=self._db,
+        self.connection = MySQLdb.connect(host='192.168.1.222', user=self.user, passwd=self.passw, db=self._db,
                                           cursorclass=DictCursor)
 
     def do_query(self, query, args=''):

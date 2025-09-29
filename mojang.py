@@ -13,7 +13,7 @@ class Mojang:
 
     @staticmethod
     def mojang_user_to_uuid(username):
-        with urllib.request.urlopen("https://api.mojang.com/users/profiles/minecraft/%s" % username) as url:
+        with urllib.request.urlopen("https://api.mojang.com/users/profiles/minecraft/{}".format(username)) as url:
             data = json.loads(url.read().decode())
         return data['id']
 
@@ -23,7 +23,7 @@ class Mojang:
 
     @staticmethod
     def _get_avatar_payload(uuid: int):
-        with urllib.request.urlopen("https://sessionserver.mojang.com/session/minecraft/profile/%s" % uuid) as url:
+        with urllib.request.urlopen("https://sessionserver.mojang.com/session/minecraft/profile/{}".format(uuid)) as url:
             data = json.loads(url.read().decode())
         return data['properties'][0]['textures']
 
