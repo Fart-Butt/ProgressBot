@@ -22,5 +22,5 @@ class ScraperHandler(commands.Cog):
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             for i in vacuum:
                 log.debug("SCRAPER - executing vacuum for guid %s" % i)
-                executor.map(vacuum[i].playtime_scraper_rcon())
+                executor.map(await vacuum[i].playtime_scraper_rcon())
         log.debug("MINECRAFT SCRAPER - ended")

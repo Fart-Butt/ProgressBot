@@ -9,10 +9,14 @@ import time
 import socket
 from mcrcon import MCRcon
 from config import server
+from pathlib import Path
+import subprocess
 
 from collections import UserDict
 from dateutil.parser import parse
 import shared
+
+from config import mc_scripts_path
 
 log = logging.getLogger('bot.' + __name__)
 
@@ -28,6 +32,8 @@ class Vacuum:
         self.NSA_module = False
         log.debug("__init__ :: NSA_module enable set to %s" % self.NSA_module)
         self.playtime_load()
+        self.server_state=0
+        self.response_counter=0
 
         try:
             if self.players:
@@ -36,7 +42,7 @@ class Vacuum:
             # variable is empty instead of being an empty list
             self.players = []
 
-    def playtime_scraper_rcon(self):
+    async def playtime_scraper_rcon(self):
         log.debug("playtime_scraper_rcon started")
         try:
             with MCRcon(server['ip'], server['password'], ) as m:
@@ -60,11 +66,41 @@ class Vacuum:
         except ConnectionRefusedError:
             log.error("RCON Connection refused")
             #minecraft server is down.
-
+            await self.do_server_exception()
         finally:
             log.debug("current players: %s" % self.players)
             log.debug("playtime_scraper_rcon finished")
 
+    async def do_server_exception(self):
+        if self.response_counter == 0:
+            reboot_monitor_file = Path(mc_scripts_path + "reboot.txt")
+            if reboot_monitor_file.exists():
+                # this is likely a scheduled reboot, we will mute the channel message but continue
+                # as normal to catch reboot issues
+                # lets delete the file to acknowledge the reboot
+                log.debug("reboot detected")
+                #os.remove(mc_scripts_path + "reboot.txt")
+            else:
+                # probably not a scheduled reboot
+                log.debug("think the server crashed")
+                channel = (shared.bot.get_channel(154337182717444096) or await shared.bot.fetch_channel(154337182717444096))
+                await shared.comms_instance.do_send_message(channel, "I think the server took a shit")
+        self.response_counter += 1
+        log.debug("server offline, counter is %d" % self.response_counter)
+        if not self.server_state == 2:
+            server_state = await self.response_monitor()
+
+    async def response_monitor(self):
+        if self.response_counter >= 40:
+            # 40 or more no responses from server.
+            print('its dead jim')
+            subprocess.run(shared.mc_scripts_path + "start.sh", shell=True)
+            channel = (shared.bot.get_channel(154337182717444096) or await shared.bot.fetch_channel(154337182717444096))
+            await shared.comms_instance.do_send_message(channel, "I'm rebooting this POS now")
+            # lock server in restart mode so monitor does not attempt to start a new instance
+            self.server_state = 2
+        else:
+            self.server_state = 0
 
     def playtime_scraper(self):
         log.debug("scraper started at %s" % str(time.time()))
