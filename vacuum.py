@@ -37,18 +37,16 @@ class Vacuum:
             self.players = []
 
     def playtime_scraper_rcon(self):
-        log.debug("playtime_scraper_rcon running")
-        #try:
-        with MCRcon(server['ip'], server['password'], ) as m:
-            resp = m.command("/list")
-            try:
+        log.debug("playtime_scraper_rcon started")
+        try:
+            with MCRcon(server['ip'], server['password'], ) as m:
+                resp = m.command("/list")
                 resp=resp.rstrip()
-                print("resp '%s'" % resp)
+                log.debug("resp '%s'" % resp)
                 players_ = resp.split(": ")[1].split(", ")
-                print("player list: %s" % players_)
                 log.debug("player list: %s" % players_)
                 for p in players_:
-                    print("players: %s" % p)
+                    log.debug("players: %s" % p)
                     if self.playtime_player_active(p):
                         pass
                         # player was logged in, and is still logged in
@@ -57,18 +55,15 @@ class Vacuum:
                         log.debug(" adding player %s since they have logged in" % p)
                         # player was not logged in, but is logged in now.
                         self.playtime_player_addplayer(p)
-            except IndexError:
-                #no one probably
-                players_ = []
-                pass
-            except ConnectionRefusedError:
-                log.error("RCON Connection refused")
-                pass
-            finally:
-                self.playtime_player_checkplayers(players_)
-        #except:
-            #pass
-        print("current players: %s" % self.players)
+                    self.playtime_player_checkplayers(players_)
+
+        except ConnectionRefusedError:
+            log.error("RCON Connection refused")
+            #minecraft server is down.
+
+        finally:
+            log.debug("current players: %s" % self.players)
+            log.debug("playtime_scraper_rcon finished")
 
 
     def playtime_scraper(self):
@@ -142,25 +137,6 @@ class Vacuum:
         finally:
             pass
 
-    async def do_exception(self, server_state, response_counter):
-        if response_counter == 0:
-            # reboot_monitor_file = Path("/home/taffer/minecraft/progress/reboot.txt")
-            if 1 == 2:
-                # this is likely a scheduled reboot, we will mute the channel message but continue
-                # as normal to catch reboot issues
-                # lets delete the file to acknowledge the reboot
-                log.debug("reboot detected")
-                os.remove("/home/taffer/minecraft/progress/reboot.txt")
-            else:
-                # probably not a scheduled reboot
-                log.warning("think the server crashed")
-                # await do_send_message(bot.get_channel(154337182717444096), "I think the server took a shit")
-        response_counter += 1
-        log.warning("server offline, counter is %d" % response_counter)
-        if not server_state == 2:
-            server_state = await response_monitor(response_counter)
-        return server_state, response_counter
-
     def playtime_player_checkplayers(self, players):
         try:
             for e in self.players:
@@ -172,6 +148,7 @@ class Vacuum:
                     self.playtime_player_record(e[0], self.playtime_player_deltaseconds(e[1]))
                     self.playtime_player_removeplayer(e)
         except TypeError:
+            print("type error")
             # something went wrong with variable initialization.
             self.players = []
             self.playtime_player_checkplayers(players)
