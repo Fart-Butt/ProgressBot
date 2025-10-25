@@ -263,7 +263,7 @@ class Vacuum:
         m = message.split()
         log.info(m)
         player = m[1].lower()  # case insensitivity support for player name
-        coords = self.get_player_coords(m[1])
+        #coords = self.get_player_coords(m[1])
         # now i need to combine the death reason into a string, which will be words in positions 2-n of the death
         # message 'm'
         dmsg = ''
@@ -274,19 +274,24 @@ class Vacuum:
             for i in m[2:]:
                 dmsg = dmsg + " " + i
         dmsg = dmsg.strip()
-        log.info("%s %s %s %s %s" % (player, dmsg, "Exception Handling", datetime.datetime.utcnow(), player))
+        #log.info("%s %s %s %s %s" % (player, dmsg, "Exception Handling", datetime.datetime.utcnow(), player))
 
         try:
             shared.db["minecraft"].do_insert(
                 "INSERT INTO `{}_deaths` (`player`,`message`,`world`,`x`,`y`,`z`,`datetime`)"
-                "%s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
-                "%s as datetime ".format(self.table_prefix),
+                " values(%s, %s, %s, %s, %s, %s, %s) ".format(self.table_prefix),
                 (player, dmsg, "None", 0, 0, 0, datetime.datetime.utcnow(),))
+            #shared.db["minecraft"].do_insert(
+            #    "INSERT INTO `{}_deaths` (`player_guid`, `player`,`message`,`world`,`x`,`y`,`z`,`datetime`)"
+            #    " select player_guid, %s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
+            #    "%s as datetime "
+            #    "from minecraft_pleayers where player_name = %s".format(self.table_prefix),
+             #   (player, dmsg, "None", 0, 0, 0, datetime.datetime.utcnow()), player)
         except TypeError:
             # catch this error, something that i dont believe should be possible with how this is set up but?????
             shared.db["minecraft"].do_insert(
                 "INSERT INTO `{}_deaths` (`player_guid`, `player`,`message`,`world`,`x`,`y`,`z`,`datetime`)"
-                "select player_guid, %s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
+                " select player_guid, %s as player, %s as message, %s as world, %s as x, %s as y, %s as z, "
                 "%s as datetime "
                 "from minecraft_pleayers where player_name = %s".format(self.table_prefix),
                 (player, dmsg, "Exception Handling", 0, 0, 0, datetime.datetime.utcnow()), player)
