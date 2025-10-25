@@ -15,3 +15,5 @@ server= {
 minecraft_db = os.environ['progressbot_minecraft_db']
 
 global_ignore_list = os.environ['progressbot_global_ignore_list']
+
+mc_scripts_path = os.environ['progressbot_mc_base_path'] + "scripts/"
