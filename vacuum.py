@@ -231,12 +231,12 @@ class Vacuum:
             return False
 
     def playtime_serialize(self):
-        with open('players_%s.txt' % self.table_prefix, 'w') as f:
+        with open('players/players_%s.txt' % self.table_prefix, 'w') as f:
             json.dump(self.players, f, ensure_ascii=False, default=str)
 
     def playtime_load(self):
         try:
-            with open('players_%s.txt' % self.table_prefix) as f:
+            with open('players/players_%s.txt' % self.table_prefix) as f:
                 self.players = json.load(f)
         except FileNotFoundError:
             # nothing special needs to happen here
