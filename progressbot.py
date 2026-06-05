@@ -3,12 +3,10 @@ from pathlib import Path
 import datetime
 import aiohttp
 from cogs.vacuum import VacuumCog
-from cogs.scraper_handler import ScraperHandler
 from progress import ProgressBot
-from shared import bot, vacuum_instance
+from shared import bot
 from discord.channel import DMChannel
 import logging
-from discord.ext import tasks
 
 import config
 
@@ -82,7 +80,6 @@ async def main():
     # start the client
     async with bot:
         log.debug("MAIN - starting")
-        await bot.add_cog(ScraperHandler(bot))
         log.debug("MAIN - progressbot scraper started")
         await bot.add_cog(VacuumCog(bot))
         bot.aiohttp_session = aiohttp.ClientSession()
