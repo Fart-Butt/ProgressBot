@@ -2,20 +2,22 @@ import MySQLdb
 import MySQLdb.constants.ER
 from MySQLdb.cursors import DictCursor
 import logging
+from config import db_secrets
 
 log = logging.getLogger('bot.' + __name__)
 
 
 class Db:
-    def __init__(self, _db: str, username: str, password: str):
-        self._db = _db
-        self.user = username
-        self.passw = password
-        self.connection = MySQLdb.connect(host='192.168.1.222', user=self.user, passwd=self.passw, db=self._db,
+    def __init__(self):
+        self._db = db_secrets['database']
+        self.user = db_secrets['username']
+        self.passw = db_secrets['password']
+        self.host = f"{db_secrets['host']}:{db_secrets['port']}"
+        self.connection = MySQLdb.connect(host=self.host, user=self.user, passwd=self.passw, db=self._db,
                                           cursorclass=DictCursor)
 
     def connect(self):
-        self.connection = MySQLdb.connect(host='192.168.1.222', user=self.user, passwd=self.passw, db=self._db,
+        self.connection = MySQLdb.connect(host=self.host, user=self.user, passwd=self.passw, db=self._db,
                                           cursorclass=DictCursor)
 
     def do_query(self, query, args=''):
