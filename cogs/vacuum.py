@@ -22,9 +22,9 @@ class VacuumCog(Cog):
     @can_speak_in_channel()
     async def registerbase(self, ctx: Context, *args):
         """register your minecraft base with buttbot.  this will automatically update your previous entry."""
-        db["minecraft"].do_insert("insert into progress_NSA_POI (player, dimension, poi_estimated_size, x, z, datetime)"
-                                  " select * from (select player, dimension, 100 as poi_estimated_size, x, z, datetime "
-                                  "from progress_NSA_module where player = %s order by datetime DESC limit 1) as new "
+        db["minecraft"].do_insert("insert into progress_NSA_POI (player_name, dimension, poi_estimated_size, x, z, datetime)"
+                                  " select * from (select player_name, dimension, 100 as poi_estimated_size, x, z, datetime "
+                                  "from progress_NSA_module where player_name = %s order by datetime DESC limit 1) as new "
                                   "on duplicate key update datetime = new.datetime, x = new.x, z = new.z", (args[0],))
         async with ctx.typing():
             await asyncio.sleep(4)
@@ -38,9 +38,9 @@ class VacuumCog(Cog):
         """reports whose base you are standing in."""
         # this query checks to see if someone has the base registered in the database.
         requester = args
-        a = db["minecraft"].do_query("select pnp.player from progress_NSA_POI pnp "
+        a = db["minecraft"].do_query("select pnp.player_name from progress_NSA_POI pnp "
                                      "left join (select x, z from progress_NSA_module "
-                                     "where player = %s group by datetime DESC limit 1) t1 "
+                                     "where player_name = %s group by datetime DESC limit 1) t1 "
                                      "on pnp.x between (t1.x-60) and (t1.x+60) "
                                      "where pnp.z between (t1.z-60) and (t1.z+60)", (requester,))
 
@@ -53,18 +53,18 @@ class VacuumCog(Cog):
             message = "%s lives there" % ", ".join(player)
         else:
             # no one registered at this location, lets poll the tracking table to see who is likely
-            b = db["minecraft"].do_query("select player, count(*) as co, "
+            b = db["minecraft"].do_query("select player_name, count(*) as co, "
                                          "count(*) / (select count(*) from progress_NSA_module pnm left join "
-                                         "(select x, z from progress_NSA_module where player = %s "
+                                         "(select x, z from progress_NSA_module where player_name = %s "
                                          "group by datetime DESC limit 1) t1 on "
                                          "pnm.x between (t1.x-50) and (t1.x+50) "
                                          "where pnm.z between (t1.z-50) and (t1.z+50))*100 as percent "
                                          "from progress_NSA_module pnm left join "
                                          "(select x, z from progress_NSA_module where "
-                                         "player = %s group by datetime DESC limit 1) t1 "
+                                         "player_name = %s group by datetime DESC limit 1) t1 "
                                          "on pnm.x between (t1.x-50) and (t1.x+50) where "
                                          "pnm.z between (t1.z-50) and (t1.z+50) "
-                                         "group by player "
+                                         "group by player_name "
                                          "having percent > 15 and co > 1000", (requester, requester))
             if len(b) > 0:
                 # someone probably lives here
@@ -87,23 +87,23 @@ class VacuumCog(Cog):
     async def gaminggods(self, ctx: Context):
         """lets you know who is boss"""
         result = db["minecraft"].do_query(
-            """select ppv.player, format(sum(ppv.timedelta)/60/60, 1) as time
+            """select ppv.player_name, format(sum(ppv.timedelta)/60/60, 1) as time
             from progress_playertracker_v2 ppv
             inner join
-                (select T.player FROM progress_playertracker_v2 as T
-                    left join(SELECT count(D.player) as deaths, D.player from progress_deaths D GROUP BY D.player) D
-                ON T.player = D.player where coalesce(deaths,0) = 0 and T.datetime > DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            group by player
+                (select T.player_name FROM progress_playertracker_v2 as T
+                    left join(SELECT count(D.player_name) as deaths, D.player_name from progress_deaths D GROUP BY D.player_name) D
+                ON T.player_name = D.player_name where coalesce(deaths,0) = 0 and T.datetime > DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            group by player_name
             having sum(T.timedelta) > 18000) t1
-            on ppv.player = t1.player
-            group by player
+            on ppv.player_name = t1.player_name
+            group by player_name
             order by time DESC"""
         )
         if len(result) > 1:
             # normal return
             async with ctx.typing():
                 await asyncio.sleep(4)
-            await ctx.send("here are your gaming gods: %s" % self.sort(result, 'player', 'time', " hours"))
+            await ctx.send("here are your gaming gods: %s" % self.sort(result, 'player_name', 'time', " hours"))
         elif len(result) == 1:
             async with ctx.typing():
                 await asyncio.sleep(4)
@@ -133,7 +133,7 @@ class VacuumCog(Cog):
             if player:
                 lastseen = db["minecraft"].do_query(
                     "select datetime from progress_playertracker_v2 "
-                    "where player=%s order by datetime desc limit 1",
+                    "where player_name=%s order by datetime desc limit 1",
                     (player,)
                 )
                 db["minecraft"].close()
@@ -190,9 +190,11 @@ class VacuumCog(Cog):
     def playtime_global(guild_guid: int):
         players = db["minecraft"].do_query(
             "select abs(sum(timedelta)) as seconds, count(timedelta)"
-            " as sessions, player from progress_playertracker_v2 group by player"
+            " as sessions, player_name from progress_playertracker_v2 group by player_name"
         )
         db["minecraft"].close()
+        logging.debug("found players:")
+        logging.debug(players)
         total_seconds = 0
         total_sessions = 0
         for p in players:
@@ -208,7 +210,7 @@ class VacuumCog(Cog):
         time = db["minecraft"].do_query(
             "select sum(progress_playertracker_v2.timedelta) as seconds, "
             "count(progress_playertracker_v2.timedelta) as sessions "
-            "from progress_playertracker_v2 where player in "
+            "from progress_playertracker_v2 where player_name in "
             "(select player_name from progress.minecraft_players "
             "where player_guid = (select player_guid as guid from progress.minecraft_players where player_name = %s))"
             , (player,))
@@ -241,18 +243,18 @@ class VacuumCog(Cog):
 
     def howchies_profile(self, message: str, guild_guid: int):
         result = db["minecraft"].do_query(
-            "SELECT player, count(*) as `count` FROM `progress_deaths` where match(message) against (%s)"
-            "GROUP BY player ORDER by count DESC",
+            "SELECT player_name, count(*) as `count` FROM `progress_deaths` where match(message) against (%s)"
+            "GROUP BY player_name ORDER by count DESC",
             (message,))
         db["minecraft"].close()
         if result:
-            return self.sort(result, 'player', 'count')
+            return self.sort(result, 'player_name', 'count')
         else:
             return 'No deaths recorded'
 
     def ouchies_profile(self, player: str, guild_guid: int):
         result = db["minecraft"].do_query(
-            "SELECT message,count(*) as `count` FROM `progress_deaths` WHERE player=%s"
+            "SELECT message,count(*) as `count` FROM `progress_deaths` WHERE player_name=%s"
             " GROUP BY message ORDER BY count DESC",
             (player,))
         db["minecraft"].close()
@@ -340,21 +342,21 @@ class VacuumCog(Cog):
 
     def top_10_deaths(self, guild_guid: int):
         result = db["minecraft"].do_query(
-            "SELECT player, count(*) as `count` FROM `progress_deaths` GROUP BY player ORDER BY count DESC LIMIT 10")
+            "SELECT player_name, count(*) as `count` FROM `progress_deaths` GROUP BY player_name ORDER BY count DESC LIMIT 10")
         if result:
-            return self.sort(result, 'player', 'count')
+            return self.sort(result, 'player_name', 'count')
         else:
             pass
 
     def deathsperhour_list(self, guild_guid: int):
         dph = db["minecraft"].do_query(
-            "select T.player, COALESCE(D.deaths, 0) / (sum(T.timedelta) / 60 / 60) as deaths_per_hour"
-            "FROM progress_playertracker_v2 as T left join(SELECT count(D.player) as deaths, "
-            "D.player from {0}_deaths D GROUP BY D.player) D ON T.player = D.player group by"
-            "T.player ORDER BY deaths_per_hour DESC LIMIT 10"
+            "select T.player_name, COALESCE(D.deaths, 0) / (sum(T.timedelta) / 60 / 60) as deaths_per_hour"
+            "FROM progress_playertracker_v2 as T left join(SELECT count(D.player_name) as deaths, "
+            "D.player_name from {0}_deaths D GROUP BY D.player_name) D ON T.player_name = D.player_name group by"
+            "T.player_name ORDER BY deaths_per_hour DESC LIMIT 10"
         )
         if dph:
-            return self.sort(dph, 'player', 'deaths_per_hour')
+            return self.sort(dph, 'player_name', 'deaths_per_hour')
 
     @command()
     @commands.cooldown(1, 10, BucketType.guild)
@@ -363,10 +365,10 @@ class VacuumCog(Cog):
     @can_speak_in_channel()
     async def deathsperhour(self, ctx: Context, *args):
         dph = db["minecraft"].do_query(
-            "select T.player, COALESCE(D.deaths, 0) / format((sum(T.timedelta)/60/60),1) as deaths_per_hour FROM "
-            "progress_playertracker_v2 as T left join (SELECT count(D.player) as deaths, D.player"
-            " from progress_deaths D where player=%s GROUP BY D.player) D"
-            " ON T.player = D.player where T.player=%s group by T.player", (args[0], args[0]))
+            "select T.player_name, COALESCE(D.deaths, 0) / format((sum(T.timedelta)/60/60),1) as deaths_per_hour FROM "
+            "progress_playertracker_v2 as T left join (SELECT count(D.player_name) as deaths, D.player_name"
+            " from progress_deaths D where player_name=%s GROUP BY D.player_name) D"
+            " ON T.player_name = D.player_name where T.player_name=%s group by T.player_name", (args[0], args[0]))
         try:
             if dph[0]['deaths_per_hour'] > 0:
                 # good return
@@ -448,14 +450,14 @@ class VacuumCog(Cog):
     async def basewaypoint(self, ctx: Context, *args):
         """will give you a waypoint for a registered player's base"""
         requester = args
-        a = db["minecraft"].do_query("select x, z, player from progress.progress_NSA_POI where player=%s", (requester,))
+        a = db["minecraft"].do_query("select x, z, player_name from progress.progress_NSA_POI where player_name=%s", (requester,))
 
         players = len(a)
         if players > 0:
             # 1 or more players registered at this location
             player = list()
             for lines in a:
-                player.append(lines['player'])
+                player.append(lines['player_name'])
             message = '[name:"Home of %s", x:%s, y:64, z:%s, dim:minecraft:overworld]' % \
                       (", ".join(player),
                        a[0]['x'],
@@ -476,11 +478,11 @@ class VacuumCog(Cog):
         """returns cheevo info for a specified cheevo"""
         cheevo = " ".join(args)
         a = db["minecraft"].do_query('''select o.oldest, n.newest, p.percent_players from
-            (select player as oldest from progress.progres_cheevos where cheevo_text = %s order by datetime asc limit 1) as o,
-            (select player as newest from progress.progres_cheevos where cheevo_text = %s order by datetime desc limit 1) as n,
+            (select player_name as oldest from progress.progres_cheevos where cheevo_text = %s order by datetime asc limit 1) as o,
+            (select player_name as newest from progress.progres_cheevos where cheevo_text = %s order by datetime desc limit 1) as n,
             (select ch.total_w_cheevo/ppv.total_players*100 as percent_players from
-            (select count(distinct player) total_players from progress.progress_playertracker_v2) as ppv,
-            (select count(distinct player) as total_w_cheevo from progress.progres_cheevos where cheevo_text = %s) as ch) as p''',
+            (select count(distinct player_name) total_players from progress.progress_playertracker_v2) as ppv,
+            (select count(distinct player_name) as total_w_cheevo from progress.progres_cheevos where cheevo_text = %s) as ch) as p''',
                                      (cheevo, cheevo, cheevo))
         print(a)
         message = "first post: {}  most recent: {}  %of players with achievement: {:.0f}%".format(a[0]['oldest'],
