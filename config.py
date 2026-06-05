@@ -12,3 +12,5 @@ db_secrets = {
     'database': os.environ['progressbot_db_database']
 } # db config
 global_ignore_list = os.environ['progressbot_global_ignore_list']
+
+permitted_channels = eval(os.environ['progressbot_permitted_channels'])

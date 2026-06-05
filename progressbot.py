@@ -55,7 +55,7 @@ async def on_message(message):
         if message.author == bot.user:
             # me
             return
-        if message.channel.id == 154337182717444096:
+        if message.channel.id in config.permitted_channels:
             try:
                 print("message author: %s" % message.author.id)
                 if message.content[0] == config.command_prefix:

@@ -1,6 +1,7 @@
 from discord.ext.commands import Context, check
 from discord import Message
 import logging
+from config import permitted_channels
 
 log = logging.getLogger('bot.' + __name__)
 
@@ -48,7 +49,7 @@ def can_speak_in_channel():
 
     def predicate(ctx: Context):
         log.debug("CAN_SPEAK_IN_CHANNEL: %s, %d, %s" %
-                  (ctx.message.channel.id in [154337182717444096, ],
+                  (ctx.message.channel.id in permitted_channels,
                    ctx.message.channel.id,
                    "hard coded"))
         return allowed_in_channel(ctx.message)
@@ -58,7 +59,7 @@ def can_speak_in_channel():
 
 def allowed_in_channel(message: Message):
     try:
-        if message.channel.id in [154337182717444096, ]:
+        if message.channel.id in permitted_channels:
             log.debug("ALLOWED_IN_CHANNEL - True")
             return True
         else:
@@ -73,7 +74,7 @@ def allowed_in_channel(message: Message):
 
 def allowed_in_channel_direct(guild: int, channel: int):
     try:
-        if channel in [154337182717444096, ]:
+        if channel in permitted_channels:
             return True
         else:
             return False

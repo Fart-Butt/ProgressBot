@@ -5,7 +5,7 @@ import mojang as mj
 from butt_library import allowed_in_channel_direct
 from discord import Message
 
-from shared import comms_instance, vacuum_instance as vacuum, db, bot
+from shared import comms_instance, bot
 
 log = logging.getLogger('bot.' + __name__)
 

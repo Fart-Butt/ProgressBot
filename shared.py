@@ -2,12 +2,10 @@ import discord_comms
 import butt_database
 from config import *
 import logging
-import vacuum
 from discord.ext.commands import Bot
 import aiohttp
 import asyncio
 import discord
-
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
@@ -19,7 +17,7 @@ log = logging.getLogger('bot.' + __name__)
 
 # database instances
 db = {
-    "minecraft": butt_database.Db(minecraft_db, db_secrets[0], db_secrets[1]),
+    "minecraft": butt_database.Db()
 }
 
 tables = {
@@ -31,9 +29,6 @@ tables = {
 }
 
 comms_instance = discord_comms.DiscordComms()
-vacuum_instance = vacuum.VacuumManager()
-vacuum_instance.subscribe(154337182717444096, "http://192.168.1.222:8123/up/world/DIM-1/","progress")
-#vacuum_url = "http://192.168.1.222:8123/up/world/DIM-1/"
 
 async def create_http_session():
     session = aiohttp.ClientSession()

@@ -12,7 +12,7 @@ class Db:
         self._db = db_secrets['database']
         self.user = db_secrets['username']
         self.passw = db_secrets['password']
-        self.host = f"{db_secrets['host']}:{db_secrets['port']}"
+        self.host = db_secrets['host']
         self.connection = MySQLdb.connect(host=self.host, user=self.user, passwd=self.passw, db=self._db,
                                           cursorclass=DictCursor)
 
