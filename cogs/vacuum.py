@@ -242,24 +242,20 @@ class VacuumCog(Cog):
             return "bitch dont play"
 
     def howchies_profile(self, message: str, guild_guid: int):
-        result = db["minecraft"].do_query(
-            "SELECT player_name, count(*) as `count` FROM `progress_deaths` where match(message) against (%s)"
-            "GROUP BY player_name ORDER by count DESC",
-            (message,))
+        result = db['minecraft'].call_proc('howchies', (message,))
         db["minecraft"].close()
+        logging.debug("howchies profile message: %s", message)
         if result:
-            return self.sort(result, 'player_name', 'count')
+            return self.sort(result, 'type', 'count')
         else:
             return 'No deaths recorded'
 
     def ouchies_profile(self, player: str, guild_guid: int):
-        result = db["minecraft"].do_query(
-            "SELECT message,count(*) as `count` FROM `progress_deaths` WHERE player_name=%s"
-            " GROUP BY message ORDER BY count DESC",
-            (player,))
+        result = db['minecraft'].call_proc('ouchies', (player,))
         db["minecraft"].close()
+        logging.debug("ouchies profile message: %s", player)
         if result:
-            return self.sort(result, 'message', 'count')
+            return self.sort(result, 'type', 'count')
         else:
             return 'No deaths recorded'
 
