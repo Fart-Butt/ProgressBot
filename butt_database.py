@@ -41,6 +41,14 @@ class Db:
                 result = cursor.fetchall()
         return result
 
+    def call_proc(self, proc, args):
+        log.debug("PROCEDURE - executing procedure %s with args %s" % (proc, args))
+        # try:
+        with self.connection.cursor() as cursor:
+            cursor.callproc(proc, args)
+            results = cursor.fetchall()
+            return results
+
     def do_insert(self, query, args):
         log.debug("INSERT - executing query %s with args %s" % (query, args))
         try:
