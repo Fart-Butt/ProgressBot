@@ -251,9 +251,10 @@ class VacuumCog(Cog):
     def ouchies_profile(self, player: str, guild_guid: int):
         result = db['minecraft'].call_proc('ouchies', (player,))
         #db["minecraft"].close()
+        print(result)
         logging.debug("ouchies profile message: %s", player)
         if result:
-            return self.sort(result, 'type', 'count')
+            return self.sort(result, 'player_name', 'count')
         else:
             return ''
 
@@ -281,20 +282,21 @@ class VacuumCog(Cog):
     @vacuum_enabled_in_guild()
     @can_speak_in_channel()
     async def summary(self, ctx: Context, *args):
-        if args:
-            profile=self.ouchies_profile(args[0], ctx.message.guild.id)
-            weapons=self.ouchies_weapons(args[0])
-            suspects=self.ouchies_suspects(args[0])
-            if profile and weapons and suspects:
-                async with ctx.typing():
-                    await asyncio.sleep(3)
-                await ctx.send(f"Heres whats killing you: {profile}. in addition, the following weapons were found at the scene of the crimes: {weapons}. leading suspects are: {suspects}")
-            else:
-                async with ctx.typing():
-                    await asyncio.sleep(3)
-                await ctx.send("Nothing to report")
+        print("summary")
+        profile=self.howchies_profile('', ctx.message.guild.id)
+        weapons=self.ouchies_weapons('')
+        suspects=self.ouchies_suspects('')
+        print(profile)
+        print(weapons)
+        print(suspects)
+        if profile and weapons and suspects:
+            async with ctx.typing():
+                await asyncio.sleep(3)
+            await ctx.send(f"Heres whats killing you: {profile}. in addition, the following weapons were found at the scene of the crimes: {weapons}. leading suspects are: {suspects}")
         else:
-            pass
+            async with ctx.typing():
+                await asyncio.sleep(3)
+            await ctx.send("Nothing to report")
 
     @command()
     @commands.cooldown(1, 10, BucketType.guild)
