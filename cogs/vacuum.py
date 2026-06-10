@@ -136,7 +136,7 @@ class VacuumCog(Cog):
                     "where player_name=%s order by datetime desc limit 1",
                     (player,)
                 )
-                db["minecraft"].close()
+                #db["minecraft"].close()
                 try:
                     lastseen = lastseen[0]['datetime']
                     now = datetime.datetime.utcnow()
@@ -192,7 +192,7 @@ class VacuumCog(Cog):
             "select abs(sum(timedelta)) as seconds, count(timedelta)"
             " as sessions, player_name from progress_playertracker_v2 group by player_name"
         )
-        db["minecraft"].close()
+        #db["minecraft"].close()
         logging.debug("found players:")
         logging.debug(players)
         total_seconds = 0
@@ -243,21 +243,58 @@ class VacuumCog(Cog):
 
     def howchies_profile(self, message: str, guild_guid: int):
         result = db['minecraft'].call_proc('howchies', (message,))
-        db["minecraft"].close()
+        #db["minecraft"].close()
         logging.debug("howchies profile message: %s", message)
         if result:
             return self.sort(result, 'type', 'count')
-        else:
-            return 'No deaths recorded'
 
     def ouchies_profile(self, player: str, guild_guid: int):
         result = db['minecraft'].call_proc('ouchies', (player,))
-        db["minecraft"].close()
+        #db["minecraft"].close()
         logging.debug("ouchies profile message: %s", player)
         if result:
             return self.sort(result, 'type', 'count')
         else:
-            return 'No deaths recorded'
+            return ''
+
+    def ouchies_suspects(self, player: str):
+        result = db['minecraft'].call_proc('ouchies_suspects', (player,))
+        # db["minecraft"].close()
+        logging.debug("ouchies profile message: %s", player)
+        if result:
+            return self.sort(result, 'localizationMob', 'count')
+        else:
+            return ''
+
+    def ouchies_weapons(self, player: str):
+        result = db['minecraft'].call_proc('ouchies_weapons', (player,))
+        # db["minecraft"].close()
+        logging.debug("ouchies profile message: %s", player)
+        if result:
+            return self.sort(result, 'weapon', 'count')
+        else:
+            return ''
+
+    @command()
+    @commands.cooldown(1, 10, BucketType.guild)
+    @valid_user_or_bot()
+    @vacuum_enabled_in_guild()
+    @can_speak_in_channel()
+    async def summary(self, ctx: Context, *args):
+        if args:
+            profile=self.ouchies_profile(args[0], ctx.message.guild.id)
+            weapons=self.ouchies_weapons(args[0])
+            suspects=self.ouchies_suspects(args[0])
+            if profile and weapons and suspects:
+                async with ctx.typing():
+                    await asyncio.sleep(3)
+                await ctx.send(f"Heres whats killing you: {profile}. in addition, the following weapons were found at the scene of the crimes: {weapons}. leading suspects are: {suspects}")
+            else:
+                async with ctx.typing():
+                    await asyncio.sleep(3)
+                await ctx.send("Nothing to report")
+        else:
+            pass
 
     @command()
     @commands.cooldown(1, 10, BucketType.guild)
