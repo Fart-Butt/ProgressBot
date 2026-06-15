@@ -276,19 +276,35 @@ class VacuumCog(Cog):
         else:
             return ''
 
+    def kills_by_player(self, player: str):
+        print("test")
+        result = db['minecraft'].call_proc('kills_by_player', (player,))
+        # db["minecraft"].close()
+        logging.info("kills by player: %s", player)
+        if result:
+            return result
+        else:
+            return ''
+
+    def kills_whole_server(self):
+        result = db['minecraft'].call_proc('kills_whole_server')
+        # db["minecraft"].close()
+        logging.info("kills_whole_server: %s", result)
+        if result:
+            return self.sort(result, 'player_name', 'count')
+        else:
+            return ''
+
+
     @command()
     @commands.cooldown(1, 10, BucketType.guild)
     @valid_user_or_bot()
     @vacuum_enabled_in_guild()
     @can_speak_in_channel()
     async def summary(self, ctx: Context, *args):
-        print("summary")
         profile=self.howchies_profile('', ctx.message.guild.id)
         weapons=self.ouchies_weapons('')
         suspects=self.ouchies_suspects('')
-        print(profile)
-        print(weapons)
-        print(suspects)
         if profile and weapons and suspects:
             async with ctx.typing():
                 await asyncio.sleep(3)
@@ -297,6 +313,27 @@ class VacuumCog(Cog):
             async with ctx.typing():
                 await asyncio.sleep(3)
             await ctx.send("Nothing to report")
+
+    @command()
+    @commands.cooldown(1, 10, BucketType.guild)
+    @valid_user_or_bot()
+    @vacuum_enabled_in_guild()
+    @can_speak_in_channel()
+    async def mobkills(self, ctx: Context, *args):
+        if args:
+            #player
+            kills = self.kills_by_player(args[0])
+            async with ctx.typing():
+                await asyncio.sleep(3)
+            await ctx.send("Kills for %s: %s" % (kills[0]['player_name'], kills[0]['count']))
+        else:
+            #general
+            kills = self.kills_whole_server()
+            logging.info("kills whole server result: %s", kills)
+            async with ctx.typing():
+                await asyncio.sleep(3)
+            await ctx.send("Top 5 killers: %s" % (kills))
+
 
     @command()
     @commands.cooldown(1, 10, BucketType.guild)

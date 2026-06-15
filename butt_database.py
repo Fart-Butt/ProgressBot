@@ -41,11 +41,14 @@ class Db:
                 result = cursor.fetchall()
         return result
 
-    def call_proc(self, proc, args):
+    def call_proc(self, proc, args=None):
         log.debug("PROCEDURE - executing procedure %s with args %s" % (proc, args))
         # try:
         with self.connection.cursor() as cursor:
-            cursor.callproc(proc, args)
+            if args is None or args == "":
+                cursor.callproc(proc)
+            else:
+                cursor.callproc(proc, args)
             results = cursor.fetchall()
             return results
 
