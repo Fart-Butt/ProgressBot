@@ -308,7 +308,9 @@ class VacuumCog(Cog):
         if profile and weapons and suspects:
             async with ctx.typing():
                 await asyncio.sleep(3)
-            await ctx.send(f"Heres whats killing you: {profile}. in addition, the following weapons were found at the scene of the crimes: {weapons}. leading suspects are: {suspects}")
+            await ctx.send(f"""Heres whats killing you: {profile}.
+                           in addition, the following weapons were found at the scene of the crimes: {weapons}.
+                           leading suspects are: {suspects}""")
         else:
             async with ctx.typing():
                 await asyncio.sleep(3)
