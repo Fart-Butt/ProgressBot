@@ -86,19 +86,8 @@ class VacuumCog(Cog):
     @can_speak_in_channel()
     async def gaminggods(self, ctx: Context):
         """lets you know who is boss"""
-        result = db["minecraft"].do_query(
-            """select ppv.player_name, format(sum(ppv.timedelta)/60/60, 1) as time
-            from progress_playertracker_v2 ppv
-            inner join
-                (select T.player_name FROM progress_playertracker_v2 as T
-                    left join(SELECT count(D.player_name) as deaths, D.player_name from progress_deaths D GROUP BY D.player_name) D
-                ON T.player_name = D.player_name where coalesce(deaths,0) = 0 and T.datetime > DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            group by player_name
-            having sum(T.timedelta) > 18000) t1
-            on ppv.player_name = t1.player_name
-            group by player_name
-            order by time DESC"""
-        )
+        result=db['minecraft'].call_proc('gaminggods')
+        print(f"result: {result}")
         if len(result) > 1:
             # normal return
             async with ctx.typing():
@@ -113,7 +102,7 @@ class VacuumCog(Cog):
                             "https://www.youtube.com/watch?v=m1xs14LwzBM"
                             ]
                 r = comments[random.randrange(0, len(comments)) - 1]
-            await ctx.send("only %s is left. %s" % (result[0]['player'], r))
+            await ctx.send("only %s is left. %s" % (result[0]['player_name'], r))
         else:
             async with ctx.typing():
                 await asyncio.sleep(4)
