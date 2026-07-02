@@ -392,28 +392,6 @@ class VacuumCog(Cog):
                 await asyncio.sleep(3)
             await ctx.send('Top 10 ouchies: %s' % r)
 
-    @command()
-    @commands.cooldown(1, 10, BucketType.guild)
-    @valid_user_or_bot()
-    @vacuum_enabled_in_guild()
-    @can_speak_in_channel()
-    async def alias(self, ctx: Context, *args):
-        """sneaky playerses"""
-        names = self.player_alias(args[0])
-        log.debug("ALIAS - searching player")
-        if len(names) == 0:
-            async with ctx.typing():
-                await asyncio.sleep(3)
-            await ctx.send("I dont think i've ever seen that person")
-        elif len(names) == 1:
-            async with ctx.typing():
-                await asyncio.sleep(3)
-            await ctx.send("I've only seen this person as %s" % names[0])
-        else:
-            async with ctx.typing():
-                await asyncio.sleep(3)
-            await ctx.send("I've seen this person play as %s" % ", ".join(names))
-
     def top_10_deaths(self, guild_guid: int):
         result = db["minecraft"].do_query(
             "SELECT player_name, count(*) as `count` FROM `progress_deaths` GROUP BY player_name ORDER BY count DESC LIMIT 10")
